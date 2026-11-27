@@ -494,6 +494,42 @@ async function start() {
 
 start();
 </script>
+<script>
+(async function () {
+  const label = document.getElementById("offline");
+  if (!label) return;
+
+  if (!("serviceWorker" in navigator)) {
+    label.textContent =
+      "Офлайн-режим недоступен в этом браузере.";
+    return;
+  }
+
+  label.textContent =
+    "Подготавливаем запуск без интернета…";
+
+  const timer = setTimeout(() => {
+    label.textContent =
+      "Подготовка пока не завершена. " +
+      "Проверьте интернет и обновите страницу.";
+  }, 30000);
+
+  try {
+    await navigator.serviceWorker.register("./sw.js");
+    await navigator.serviceWorker.ready;
+
+    clearTimeout(timer);
+    label.textContent =
+      "Оболочка сохранена ✅ " +
+      "Теперь можно проверить запуск в режиме полёта.";
+  } catch (error) {
+    clearTimeout(timer);
+    label.textContent =
+      "Не удалось настроить офлайн-режим: " +
+      error.message;
+  }
+})();
+</script>
 </body>
 </html>
  
