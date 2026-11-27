@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="ru" translate="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#805d45">
+<meta name="google" content="notranslate">
+<link rel="manifest" href="./manifest.webmanifest">
+<title>Семейный календарь</title>
+
+<style>
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0;
+  padding: 14px 10px;
+  background: #eee5da;
+  color: #493b32;
+  font: 16px/1.5 system-ui, sans-serif;
+}
+main {
+  max-width: 620px;
+  margin: auto;
+  background: #fffaf3;
+  border-radius: 22px;
+  overflow: hidden;
+}
+header { padding: 20px; text-align: center; }
+h1 { margin: 0; font-size: 24px; }
+.subtitle { color: #806b5a; margin: 6px 0; }
+.cover {
+  height: 320px;
+  position: relative;
+  overflow: hidden;
+  background: #e9dfd1;
+}
+.cover img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+#placeholder {
+  height: 100%;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  padding: 20px;
+}
+#placeholder span { font-size: 60px; }
+.content { padding: 18px; }
+button, .file-button {
+  border: 0;
+  border-radius: 12px;
+  padding: 12px;
+  background: #eee3d6;
+  color: #493b32;
+  cursor: pointer;
+  font: inherit;
+}
+button:focus-visible,
+.file-button:focus-within {
+  outline: 3px solid #aa7753;
+}
+button:disabled { opacity: .5; }
+.navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+h2 { font-size: 19px; text-align: center; margin: 0; }
+.week, #days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
+}
+.week {
+  text-align: center;
+  color: #806b5a;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+.day {
+  min-height: 54px;
+  position: relative;
+  padding: 7px 2px 18px;
+  background: #f2eade;
+}
+.weekend { color: #a44f49; }
+.today { outline: 2px solid #805d45; outline-offset: -2px; }
+.marked::after {
+  content: "♥";
+  position: absolute;
+  bottom: 1px;
+  left: 0;
+  right: 0;
+  font-size: 12px;
+  color: #b35359;
+}
+.tools {
+  display: grid;
+  gap: 10px;
+  margin-top: 22px;
+}
+.file-button {
+  display: block;
+  text-align: center;
+  background: #805d45;
+  color: white;
+}
+.file-button input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.event {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+.small { font-size: 13px; color: #806b5a; }
+#status { white-space: pre-line; }
+footer {
+  text-align: center;
+  padding: 0 18px 20px;
+}
+@media (max-width:420px) {
+  .cover { height: 280px; }
+  .content { padding: 16px 12px; }
+}
+</style>
+</head>
+
+<body>
+<main>
+  <header>
+    <h1 id="title">Наш семейный календарь</h1>
+    <p class="subtitle">Самое важное — рядом</p>
+  </header>
+
+  <div class="cover">
+    <div id="placeholder">
+      <span>👨‍👩‍👧</span>
+      <p>Загрузите семейный набор<br>кнопкой внизу</p>
+    </div>
+    <img id="photo" alt="Фото месяца" hidden>
+  </div>
+
+  <section class="content">
+    <div class="navigation">
+      <button id="prev" aria-label="Предыдущий месяц">‹</button>
+      <h2 id="month" aria-live="polite"></h2>
+      <button id="next" aria-label="Следующий месяц">›</button>
+    </div>
+
+    <div class="week" aria-hidden="true">
+      <span>ПН</span><span>ВТ</span><span>СР</span>
+      <span>ЧТ</span><span>ПТ</span><span>СБ</span><span>ВС</span>
+    </div>
+    <div id="days"></div>
+
+    <p class="small">Нажмите на дату, чтобы изменить событие.</p>
+    <h3>Семейные события</h3>
+    <div id="events"></div>
+
+    <div class="tools">
+      <label class="file-button">
+        📂 Загрузить семейный набор
+        <input id="import" type="file"
+               accept=".json,application/json" disabled>
+      </label>
+      <button id="backup" disabled>⬇ Скачать резервную копию</button>
+    </div>
+
+    <p id="status" class="small" role="status">
+      Открываем хранилище…
+    </p>
+    <p id="offline" class="small">
+      Установка и офлайн-режим пока не настроены.
+    </p>
+    <p class="small">
+      Набор обрабатывается на устройстве: эта версия кода
+      не отправляет фотографии на сервер.
+      Очистка данных сайта может удалить сохранённый набор.
+      Держите резервную копию отдельно.
+      Синхронизации между устройствами нет.
+    </p>
+  </section>
+
+  <footer class="small">Создано NeuroArt Studio</footer>
+</main>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+let db = null;
+let busy = false;
+let state = {
+  format: "neuroart-family-calendar",
+  version: 1,
+  title: "Наш семейный календарь",
+  view: "2027-01",
+  photos: {},
+  events: {}
+};
+
+const monthPattern = /^\d{4}-(0[1-9]|1[0-2])$/;
+const datePattern = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
+const own = (object, key) =>
+  Object.prototype.hasOwnProperty.call(object, key);
+const object = value => value !== null &&
+  typeof value === "object" && !Array.isArray(value);
+
+function check(data) {
+  if (
+    !object(data) ||
+    data.format !== "neuroart-family-calendar" ||
+    data.version !== 1 ||
+    !object(data.photos) ||
+    !object(data.events)
+  ) throw new Error("Нужен семейный набор формата JSON.");
+
+  const photos = Object.create(null);
+  const events = Object.create(null);
+
+  for (const [key, value] of Object.entries(data.photos)) {
+    if (
+      !monthPattern.test(key) ||
+      typeof value !== "string" ||
+      !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=\r\n]+$/i.test(value)
+    ) throw new Error("Неподдерживаемая запись фотографии.");
+    photos[key] = value;
+  }
+
+  for (const [key, value] of Object.entries(data.events)) {
+    if (
+      !datePattern.test(key) ||
+      typeof value !== "string" ||
+      value.length > 500
+    ) throw new Error("Некорректная запись события.");
+
+    const date = new Date(key + "T12:00:00");
+    if (isNaN(date) || dateKey(date) !== key) {
+      throw new Error("Некорректная дата события.");
+    }
+    events[key] = value;
+  }
+
+  return {
+    format: "neuroart-family-calendar",
+    version: 1,
+    title: typeof data.title === "string"
+      ? data.title.slice(0, 100) : "Наш семейный календарь",
+    view: monthPattern.test(data.view)
+      ? data.view : Object.keys(photos).sort()[0] || "2027-01",
+    photos,
+    events
+  };
+}
+
+function notify(text) { $("status").textContent = text; }
+
+function lock(value) {
+  busy = value;
+  $("import").disabled = value || !db;
+  $("backup").disabled = value;
+}
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open("neuroart-family-calendar", 1);
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore("data");
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function readDB() {
+  return new Promise((resolve, reject) => {
+    const request = db.transaction("data")
+      .objectStore("data").get("calendar");
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function writeDB(data) {
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction("data", "readwrite");
+    transaction.objectStore("data").put(data, "calendar");
+    transaction.oncomplete = () => resolve();
+    transaction.onabort = () => reject(transaction.error);
+    transaction.onerror = () => reject(transaction.error);
+  });
+}
+
+function monthKey(date) {
+  return date.getFullYear() + "-" +
+    String(date.getMonth() + 1).padStart(2, "0");
+}
+
+function dateKey(date) {
+  return monthKey(date) + "-" +
+    String(date.getDate()).padStart(2, "0");
+}
+
+function readable(key) {
+  return new Date(key + "T12:00:00").toLocaleDateString(
+    "ru-RU", { day: "numeric", month: "long", year: "numeric" }
+  );
+}
+
+function render() {
+  const [year, month] = state.view.split("-").map(Number);
+  const date = new Date(year, month - 1, 1);
+  const text = date.toLocaleDateString("ru-RU", {
+    month: "long", year: "numeric"
+  });
+
+  $("title").textContent = state.title;
+  $("month").textContent = text.charAt(0).toUpperCase() + text.slice(1);
+
+  const photo = own(state.photos, state.view)
+    ? state.photos[state.view] : null;
+  $("photo").hidden = !photo;
+  $("placeholder").hidden = Boolean(photo);
+  if (photo) $("photo").src = photo;
+  else $("photo").removeAttribute("src");
+
+  $("days").replaceChildren();
+  const offset = (date.getDay() + 6) % 7;
+  const count = new Date(year, month, 0).getDate();
+  const today = dateKey(new Date());
+
+  for (let i = 0; i < offset; i++) {
+    $("days").append(document.createElement("div"));
+  }
+
+  for (let day = 1; day <= count; day++) {
+    const current = new Date(year, month - 1, day);
+    const key = dateKey(current);
+    const button = document.createElement("button");
+    button.className = "day";
+    button.textContent = day;
+    if ([0, 6].includes(current.getDay())) {
+      button.classList.add("weekend");
+    }
+    if (key === today) button.classList.add("today");
+    if (state.events[key]) button.classList.add("marked");
+    button.setAttribute("aria-label", readable(key));
+    button.onclick = () => editEvent(key);
+    $("days").append(button);
+  }
+
+  $("events").replaceChildren();
+  const entries = Object.entries(state.events)
+    .filter(([key]) => key.startsWith(state.view + "-"))
+    .sort(([a], [b]) => a.localeCompare(b));
+
+  if (!entries.length) {
+    const p = document.createElement("p");
+    p.className = "small";
+    p.textContent = "Пока нет событий ♥";
+    $("events").append(p);
+  }
+
+  for (const [key, value] of entries) {
+    const button = document.createElement("button");
+    button.className = "event";
+    button.textContent = readable(key) + " — " + value;
+    button.onclick = () => editEvent(key);
+    $("events").append(button);
+  }
+}
+
+function move(amount) {
+  if (busy) return;
+  const [year, month] = state.view.split("-").map(Number);
+  const date = new Date(year, month - 1 + amount, 1);
+  if (date.getFullYear() < 1900 || date.getFullYear() > 9999) return;
+  state.view = monthKey(date);
+  render();
+}
+
+$("prev").onclick = () => move(-1);
+$("next").onclick = () => move(1);
+
+async function editEvent(key) {
+  if (busy || !db) return;
+  const answer = prompt(
+    readable(key) + "\nВведите событие. Пустая строка удалит запись.",
+    state.events[key] || ""
+  );
+  if (answer === null) return;
+  if (answer.length > 500) {
+    notify("Событие должно быть не длиннее 500 символов.");
+    return;
+  }
+
+  lock(true);
+  const next = {
+    ...state,
+    events: { ...state.events }
+  };
+  if (answer.trim()) next.events[key] = answer.trim();
+  else delete next.events[key];
+
+  try {
+    await writeDB(next);
+    state = next;
+    render();
+    notify("События сохранены. Обновите резервную копию.");
+  } catch {
+    notify("Не удалось сохранить событие. Предыдущие данные оставлены.");
+  } finally {
+    lock(false);
+  }
+}
+
+$("import").onchange = async event => {
+  const file = event.target.files[0];
+  event.target.value = "";
+  if (!file || busy || !db) return;
+
+  lock(true);
+  try {
+    if (file.size > 30 * 1024 * 1024) {
+      throw new Error("Максимальный размер набора — 30 МБ.");
+    }
+    const next = check(JSON.parse(await file.text()));
+    const count = Object.keys(next.photos).length;
+
+    if (!confirm(
+      "Загрузить набор? Фотографий: " + count +
+      ".\nТекущий набор и события будут заменены. " +
+      "Продолжайте, если резервная копия сохранена."
+    )) return;
+
+    await writeDB(next);
+    state = next;
+    render();
+    notify("Набор сохранён на устройстве. Фотографий: " + count + ".");
+  } catch (error) {
+    notify("Не удалось загрузить набор: " +
+      (error.message || "ошибка хранилища") +
+      "\nПредыдущие данные не заменены.");
+  } finally {
+    lock(false);
+  }
+};
+
+$("backup").onclick = () => {
+  const blob = new Blob([JSON.stringify(state)], {
+    type: "application/json;charset=utf-8"
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "family-calendar-backup.json";
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  notify("Запрос на скачивание отправлен. Проверьте загрузки.");
+};
+
+async function start() {
+  render();
+  try {
+    db = await openDB();
+    const saved = await readDB();
+    if (saved) state = check(saved);
+    lock(false);
+    render();
+    notify(saved
+      ? "Сохранённый календарь открыт."
+      : "Загрузите файл family-calendar-set.json кнопкой выше.");
+  } catch {
+    notify(
+      "Хранилище недоступно. Импорт отключён, " +
+      "чтобы не потерять набор. Откройте сайт в обычном режиме Chrome."
+    );
+  }
+}
+
+start();
+</script>
+</body>
+</html>
+ 
