@@ -2,7 +2,8 @@
 
 const BASE = self.registration.scope;
 const PREFIX = "family-calendar-" + BASE;
-const CACHE = PREFIX + "-v1";
+const CACHE = PREFIX + "-v2";
+
 
 const FILES = [
   "./",
