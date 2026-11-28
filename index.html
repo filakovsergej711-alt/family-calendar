@@ -479,6 +479,18 @@ async function start() {
     db = await openDB();
     const saved = await readDB();
     if (saved) state = check(saved);
+
+const today = new Date();
+const currentYear = today.getFullYear();
+
+if (currentYear < 2027) {
+  state.view = "2027-01";
+} else if (currentYear > 2027) {
+  state.view = "2027-12";
+} else {
+  state.view = monthKey(today);
+}
+
     lock(false);
     render();
     notify(saved
